@@ -2,7 +2,31 @@ import './pages/index.css';
 import {enableValidation} from "./components/validate.js";
 import {createCard} from "./components/card.js";
 import {openModal, closeModal} from "./components/modal.js";
-import {initialCards} from "./scripts/cards.js"
+// import {initialCards} from "./scripts/cards.js"
+import { getUserInfo, getInitialCards, changeUserInfo, addNewCard } from './components/api.js'
+
+const profileName = document.querySelector('.profile__title');
+const profileDescription = document.querySelector('.profile__description');
+const profileImage = document.querySelector('.profile__image');
+
+getUserInfo()
+  .then((data) => {
+    profileName.textContent = data.name;
+    profileDescription.textContent = data.about;
+    profileImage.style.backgroundImage = `url('${data.avatar}')`;
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+getInitialCards()
+    .then((initialCards) => {
+        renderInitialCards(initialCards);
+        console.log(initialCards)
+    })
+    .catch((err) => {
+    console.log(err);
+}); 
 
 export const validationSettings = {
     formSelector: '.popup__form',
@@ -30,7 +54,7 @@ function renderInitialCards(cards) {
 }
 
 // Рендерим начальные карточки
-renderInitialCards(initialCards);
+// renderInitialCards(initialCards);
 
 // Находим все кнопки закрытия поп-апов
 const closeButtons = document.querySelectorAll('.popup__close');
@@ -58,8 +82,8 @@ const editButton = document.querySelector('.profile__edit-button');
 const profileFormElement = profilePopup.querySelector('.popup__form');
 const nameInput = profilePopup.querySelector('.popup__input_type_name');
 const jobInput = profilePopup.querySelector('.popup__input_type_description');
-const profileName = document.querySelector('.profile__title');
-const profileDescription = document.querySelector('.profile__description');
+// const profileName = document.querySelector('.profile__title');
+// const profileDescription = document.querySelector('.profile__description');
 
 // Открытие поп-апа редактирования профиля
 function handleEditButtonClick() {
@@ -73,6 +97,7 @@ function handleProfileFormSubmit(evt) {
     evt.preventDefault();
     profileName.textContent = nameInput.value;
     profileDescription.textContent = jobInput.value;
+    changeUserInfo(nameInput.value, jobInput.value)
     closeModal(profilePopup);
 }
 
@@ -99,6 +124,13 @@ function handleCardFormSubmit(evt) {
         name: cardNameInput.value,
         link: cardLinkInput.value
     }, imagePopup, popupImage);
+    addNewCard(cardNameInput.value, cardLinkInput.value)
+    .then((data) => {
+        console.log(data);
+    })
+    .catch((err) => {
+        console.log(err);
+    }); 
     cardList.prepend(newCard);
     closeModal(cardPopup);
 }
