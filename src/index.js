@@ -3,7 +3,7 @@ import {enableValidation} from "./components/validate.js";
 import {createCard} from "./components/card.js";
 import {openModal, closeModal} from "./components/modal.js";
 // import {initialCards} from "./scripts/cards.js"
-import { getUserInfo, getInitialCards, changeUserInfo, addNewCard } from './components/api.js'
+import { getUserInfo, getInitialCards, changeUserInfo, addNewCard, changeUserAvatar } from './components/api.js'
 
 const profileName = document.querySelector('.profile__title');
 const profileDescription = document.querySelector('.profile__description');
@@ -38,6 +38,7 @@ export const validationSettings = {
   
 // Получаем поп-апы
 const profilePopup = document.querySelector('.popup_type_edit');
+const avatarPopup = document.querySelector('.popup_type_edit-avatar');
 const cardPopup = document.querySelector('.popup_type_new-card');
 const imagePopup = document.querySelector('.popup_type_image');
 const popupImage = imagePopup.querySelector('.popup__image');
@@ -95,15 +96,64 @@ function handleEditButtonClick() {
 // Сохранение данных из формы редактирования профиля
 function handleProfileFormSubmit(evt) {
     evt.preventDefault();
-    profileName.textContent = nameInput.value;
-    profileDescription.textContent = jobInput.value;
+
+    const submitButton = profileFormElement.querySelector('.popup__button');
+    const originalButtonText = submitButton.textContent;
+    submitButton.textContent = 'Сохранение...';
+
     changeUserInfo(nameInput.value, jobInput.value)
-    closeModal(profilePopup);
+        .then(() => {
+            profileName.textContent = nameInput.value;
+            profileDescription.textContent = jobInput.value;
+            closeModal(profilePopup);
+        })
+        .catch((error) => {
+            console.error('Ошибка при обновлении профиля:', error);
+        })
+        .finally(() => {
+            submitButton.textContent = originalButtonText;
+        });
 }
 
 // Добавляем обработчики событий
 editButton.addEventListener('click', handleEditButtonClick);
 profileFormElement.addEventListener('submit', handleProfileFormSubmit)
+
+// Обработчики для поп-апа редактирования аватара
+const editAvatarButton = document.querySelector('.profile__avatar-edit-button');
+const avatarFormElement = avatarPopup.querySelector('.popup__form');
+const linkInput = avatarPopup.querySelector('.popup__input_type_url');
+
+// Открытие поп-апа редактирования аватара
+function handleEditAvatarClick() {
+    linkInput.value = profileImage.style.backgroundImage.slice(5, -2);
+    openModal(avatarPopup);
+}
+
+// Сохранение данных из формы редактирования аватара
+function handleAvatarFormSubmit(evt) {
+    evt.preventDefault();
+
+    const submitButton = avatarFormElement.querySelector('.popup__button');
+    const originalButtonText = submitButton.textContent;
+    submitButton.textContent = 'Сохранение...';
+
+    changeUserAvatar(linkInput.value)
+    .then((data) => {
+        profileImage.style.backgroundImage = `url('${data.avatar}')`;
+        closeModal(avatarPopup);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+      .finally(() => {
+        submitButton.textContent = originalButtonText;
+    });
+}
+
+// Добавляем обработчики событий
+editAvatarButton.addEventListener('click', handleEditAvatarClick);
+avatarFormElement.addEventListener('submit', handleAvatarFormSubmit)
 
 // Обработчики для поп-апа добавления карточки
 const addButton = document.querySelector('.profile__add-button');
@@ -120,19 +170,26 @@ function handleAddButtonClick() {
 // Сохранение данных из формы добавления карточки
 function handleCardFormSubmit(evt) {
     evt.preventDefault();
-    const newCard = createCard({
-        name: cardNameInput.value,
-        link: cardLinkInput.value
-    }, imagePopup, popupImage);
+
+    const submitButton = cardFormElement.querySelector('.popup__button');
+    const originalButtonText = submitButton.textContent;
+    submitButton.textContent = 'Сохранение...';
+    
     addNewCard(cardNameInput.value, cardLinkInput.value)
     .then((data) => {
-        console.log(data);
+        // {
+        //     name: cardNameInput.value,
+        //     link: cardLinkInput.value
+        // }
+        const newCard = createCard(data, imagePopup, popupImage);
+        cardList.prepend(newCard);
+        closeModal(cardPopup);  
     })
     .catch((err) => {
         console.log(err);
-    }); 
-    cardList.prepend(newCard);
-    closeModal(cardPopup);
+    }).finally(() => {
+        submitButton.textContent = originalButtonText;
+    });
 }
 
 // Добавляем обработчики событий
